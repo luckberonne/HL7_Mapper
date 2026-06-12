@@ -17,6 +17,9 @@ pnpm-debug.log*
 # Cache de Vite
 .vite/
 
+# Configuracion local de Claude Code (no versionar)
+.claude/
+
 # Editor / OS
 .vscode/*
 !.vscode/extensions.json
