@@ -121,6 +121,12 @@ function renderSegments(r: IntegrityReport): string {
     .map((seg) => {
       const title = seg.occurrence > 1 ? `${seg.name}#${seg.occurrence}` : seg.name;
       const rows = seg.fields.map(fieldRow).join('');
+      const hasMissing = seg.fields.some(f => f.status === 'required-missing');
+      const hasConditional = seg.fields.some(f => f.status === 'conditional');
+      let titleClass = '';
+      if (hasMissing) titleClass = ' seg-error';
+      else if (hasConditional) titleClass = ' seg-warn';
+
       const body = rows
         ? `<table class="fields">
              <thead><tr><th>Campo</th><th>Nombre</th><th>Valor</th><th>Tipo</th><th>Estado</th></tr></thead>
@@ -130,7 +136,7 @@ function renderSegments(r: IntegrityReport): string {
       return `
         <details class="segment">
           <summary>
-            <span class="seg-name">${escapeHtml(title)}</span>
+            <span class="seg-name${titleClass}">${escapeHtml(title)}</span>
             <span class="seg-desc">${escapeHtml(seg.desc)}</span>
             ${seg.known ? '' : '<span class="badge st-unknown">desconocido</span>'}
           </summary>
