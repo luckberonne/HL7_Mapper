@@ -25,6 +25,7 @@ const STATUS_LABEL: Record<FieldStatus, string> = {
   'optional-absent': 'Opcional ausente',
   conditional: 'Condicional',
   unknown: 'Sin definicion',
+  custom: 'Personalizado',
 };
 
 const STATUS_CLASS: Record<FieldStatus, string> = {
@@ -34,6 +35,7 @@ const STATUS_CLASS: Record<FieldStatus, string> = {
   'optional-absent': 'st-opt-absent',
   conditional: 'st-conditional',
   unknown: 'st-unknown',
+  custom: 'st-custom',
 };
 
 function escapeHtml(value: string): string {

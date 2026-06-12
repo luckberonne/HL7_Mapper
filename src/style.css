@@ -144,6 +144,7 @@ table.fields td.dt { color: var(--muted); }
 .badge.st-opt-absent, .chip.st-opt-absent { background: rgba(148,163,184,0.12); color: var(--muted); border: 1px solid var(--border); }
 .badge.st-conditional, .chip.st-conditional { background: rgba(168,85,247,0.15); color: var(--cond); border: 1px solid rgba(168,85,247,0.4); }
 .badge.st-unknown { background: rgba(245,158,11,0.15); color: var(--warn); border: 1px solid rgba(245,158,11,0.4); }
+.badge.st-custom, .chip.st-custom { background: rgba(45, 212, 191, 0.15); color: #2dd4bf; border: 1px solid rgba(45, 212, 191, 0.4); }
 
 tr.st-req-missing { background: rgba(239, 68, 68, 0.08); }
 

@@ -33,6 +33,7 @@ export interface MessageSegmentRef {
   desc: string;
   min: number;
   max: number;
+  children?: MessageSegmentRef[];
 }
 
 export interface MessageDef {

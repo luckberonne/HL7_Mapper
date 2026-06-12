@@ -57,7 +57,8 @@ export type FieldStatus =
   | 'optional-present'   // opcional y presente
   | 'optional-absent'    // opcional y vacio
   | 'conditional'        // condicional (informativo)
-  | 'unknown';           // sin definicion en el diccionario
+  | 'unknown'            // sin definicion en el diccionario
+  | 'custom';            // campo/segmento Z local o personalizado
 
 export interface FieldReport {
   segment: string;       // nombre del segmento + numero de ocurrencia, p.ej. PID o PID#2

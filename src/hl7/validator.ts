@@ -112,13 +112,14 @@ function buildSegmentReport(
       });
     } else if (value.trim().length > 0) {
       // Campo presente sin definicion en el diccionario.
+      const isCustom = seg.name.startsWith('Z');
       fields.push({
         segment: label,
         index: i,
-        name: '(sin definicion)',
+        name: isCustom ? 'Campo local' : '(sin definicion)',
         datatype: '',
         value,
-        status: 'unknown',
+        status: isCustom ? 'custom' : 'unknown',
         required: false,
         overridden: false,
       });
@@ -128,8 +129,8 @@ function buildSegmentReport(
   return {
     name: seg.name,
     occurrence,
-    desc: def?.desc ?? '(segmento desconocido)',
-    known: !!def,
+    desc: def?.desc ?? (seg.name.startsWith('Z') ? 'Segmento Z (Personalizado)' : '(segmento desconocido)'),
+    known: !!def || seg.name.startsWith('Z'),
     fields,
   };
 }
@@ -170,17 +171,46 @@ export function analyzeIntegrity(
   // --- Validacion de estructura (segmentos requeridos) ---
   const presentSegmentNames = new Set(message.segments.map((s) => s.name));
   const missingRequiredSegments: MissingSegment[] = [];
-  if (messageDef) {
-    for (const ref of messageDef.segments.segments) {
-      if (ref.min >= 1 && !presentSegmentNames.has(ref.name)) {
-        missingRequiredSegments.push({
-          name: ref.name,
-          desc: ref.desc,
-          min: ref.min,
-          max: ref.max,
-        });
+
+  function checkGroupPresent(group: import('./dictionary').MessageSegmentRef): boolean {
+    if (!group.children || group.children.length === 0) return presentSegmentNames.has(group.name);
+    // En HL7, un grupo opcional siempre es disparado por su primer segmento.
+    // Solo comprobamos el primer segmento para saber si el grupo esta presente.
+    return checkGroupPresent(group.children[0]);
+  }
+
+  function validateStructure(refs: import('./dictionary').MessageSegmentRef[], groupPresent: boolean) {
+    for (const ref of refs) {
+      const isGroup = !!ref.children;
+      const isRequired = ref.min >= 1;
+
+      if (isGroup) {
+        const anyChildPresent = checkGroupPresent(ref);
+        if (isRequired && groupPresent && !anyChildPresent) {
+          missingRequiredSegments.push({
+            name: ref.name,
+            desc: ref.desc,
+            min: ref.min,
+            max: ref.max,
+          });
+        } else if (anyChildPresent || (isRequired && groupPresent)) {
+          validateStructure(ref.children!, anyChildPresent || (isRequired && groupPresent));
+        }
+      } else {
+        if (isRequired && groupPresent && !presentSegmentNames.has(ref.name)) {
+          missingRequiredSegments.push({
+            name: ref.name,
+            desc: ref.desc,
+            min: ref.min,
+            max: ref.max,
+          });
+        }
       }
     }
+  }
+
+  if (messageDef) {
+    validateStructure(messageDef.segments.segments, true);
   }
 
   // --- Validacion de campos por segmento ---

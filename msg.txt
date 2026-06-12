@@ -1,0 +1,10 @@
+MSH|^~\&|^EGeS|^DESKTOP-TQ36VR2|||20260610094119||SIU^S12|103106|P|2.3.1
+SCH|^^4531521|4531521||||Alta||Extraordinario^Extraordinario|||0&Min|||||admin@diagnosticotesla.com^Eges^Admin||||admin@diagnosticotesla.com^Eges^Admin||22^^^MICROCENTRO
+NTE|||3700.00|Pres
+PID||^^^^DNI|^^^EGeS~12361626^^^IDENTIDAD^DNI~^^^1^1-007^&210~20202020^^^EGeS|12361626|PARISI^NAHUEL MATIAS||19991002|M|||NOGOYA^^VILLA DEL PARQUE^CIUDAD AUTONOMA DE BS.AS.^1417||1124591998^^Cellular^nahuell@enfoke.com|||||63334524401|12361626
+PV1|1|O|^^^^^^2||4531521|^^^^^VL|0^Médico No Especificado,~^Médico No Especificado,|56^DOCTORA^^^^^^^^^^^MN~1^DOCTORA~^DOCTORA|0^Médico No Especificado~^Médico No Especificado^^^^^^^^^^^MP|47|||||A0
+RGS|162
+AIS|1||180112^ECOGRAFÍA COMPLETA DE ABDOMEN^NN^180112/0^ECOGRAFÍA COMPLETA DE ABDOMEN/0^DM|20260609141800|||0|Min
+AIG|1||204|ECOGRAFIA
+ZCN|1|1
+ZDO|||0
