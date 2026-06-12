@@ -31,9 +31,20 @@ npm run build    # compila TypeScript y genera build de producción en dist/
 npm run preview  # sirve el build de producción
 ```
 
+## Páginas
+
+La app tiene tres páginas con navegación por hash (`#/`, `#/perfiles`, `#/historial`), lo que la
+hace compatible con hosting estático (Vercel) sin configuración de rewrites. Router en
+[src/router.ts](src/router.ts), vistas en [src/views/](src/views/).
+
+- **Analizar** (`#/`): editor del mensaje, acciones, **selector del perfil activo** y el reporte.
+- **Perfiles** (`#/perfiles`): gestión completa de perfiles y reglas.
+- **Historial** (`#/historial`): lista de análisis; al hacer clic en una entrada se carga su
+  mensaje en el editor de la página principal y se re-analiza.
+
 ## Uso
 
-1. Carga un mensaje HL7 v2.x: pégalo en el área de texto, usa el botón **Pegar** (lee el
+1. En **Analizar**, carga un mensaje HL7 v2.x: pégalo, usa el botón **Pegar** (lee el
    portapapeles), o **Cargar ejemplo** / **Cargar archivo**.
 2. Pulsa **Analizar**.
 3. Revisa el resumen de integridad, la sección de **datos requeridos faltantes** y el detalle
@@ -46,11 +57,12 @@ npm run preview  # sirve el build de producción
   punteado) se muestra su traducción al español, usando un diccionario local
   ([src/i18n/fieldNames.ts](src/i18n/fieldNames.ts)) — traducción exacta para los campos más
   comunes y sustitución por términos para el resto. Sin servicios externos.
-- **Perfiles de campos condicionales**: define reglas que reclasifican un campo como
-  `condicional`, `requerido` u `opcional` (por estructura `ADT_A01` o comodín `*`). El perfil
-  activo se aplica al analizar; los campos modificados se marcan con ★. Útil cuando tu
-  organización define como requeridos/condicionales campos que el estándar deja opcionales.
-- **Historial de mensajes**: cada análisis se guarda y puede recargarse con un clic.
+- **Perfiles de campos condicionales** (página *Perfiles*): define reglas que reclasifican un
+  campo como `condicional`, `requerido` u `opcional` (por estructura `ADT_A01` o comodín `*`). El
+  perfil activo (elegible desde el selector de la página principal) se aplica al analizar; los
+  campos modificados se marcan con ★.
+- **Historial de mensajes** (página *Historial*): cada análisis se guarda y puede recargarse con
+  un clic, llevándote a la página principal con el mensaje cargado.
 
 ### Persistencia (SQLite en el navegador)
 

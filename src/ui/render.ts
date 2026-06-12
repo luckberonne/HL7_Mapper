@@ -126,7 +126,7 @@ function renderSegments(r: IntegrityReport): string {
            </table>`
         : `<p class="empty">Segmento sin campos.</p>`;
       return `
-        <details class="segment" open>
+        <details class="segment">
           <summary>
             <span class="seg-name">${escapeHtml(title)}</span>
             <span class="seg-desc">${escapeHtml(seg.desc)}</span>
