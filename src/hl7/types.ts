@@ -68,6 +68,7 @@ export interface FieldReport {
   value: string;         // valor crudo
   status: FieldStatus;
   required: boolean;
+  overridden: boolean;   // true si un perfil condicional cambio su optionality
 }
 
 export interface SegmentReport {
@@ -99,6 +100,7 @@ export interface IntegrityReport {
     requiredMissing: number;
     optionalPresent: number;
     optionalAbsent: number;
+    conditional: number;
   };
   /** Segmentos requeridos (min>=1) ausentes en el mensaje. */
   missingRequiredSegments: MissingSegment[];

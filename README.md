@@ -33,14 +33,37 @@ npm run preview  # sirve el build de producción
 
 ## Uso
 
-1. Pega un mensaje HL7 v2.x en el área de texto (o usa **Cargar ejemplo** / **Cargar archivo**).
+1. Carga un mensaje HL7 v2.x: pégalo en el área de texto, usa el botón **Pegar** (lee el
+   portapapeles), o **Cargar ejemplo** / **Cargar archivo**.
 2. Pulsa **Analizar**.
 3. Revisa el resumen de integridad, la sección de **datos requeridos faltantes** y el detalle
    por segmento.
 4. Pulsa **Descargar JSON** para exportar el mensaje parseado + el análisis.
 
+## Funciones adicionales
+
+- **Traducción de nombres en tooltip**: al pasar el mouse sobre el nombre de un campo (subrayado
+  punteado) se muestra su traducción al español, usando un diccionario local
+  ([src/i18n/fieldNames.ts](src/i18n/fieldNames.ts)) — traducción exacta para los campos más
+  comunes y sustitución por términos para el resto. Sin servicios externos.
+- **Perfiles de campos condicionales**: define reglas que reclasifican un campo como
+  `condicional`, `requerido` u `opcional` (por estructura `ADT_A01` o comodín `*`). El perfil
+  activo se aplica al analizar; los campos modificados se marcan con ★. Útil cuando tu
+  organización define como requeridos/condicionales campos que el estándar deja opcionales.
+- **Historial de mensajes**: cada análisis se guarda y puede recargarse con un clic.
+
+### Persistencia (SQLite en el navegador)
+
+Perfiles, reglas e historial se guardan en **SQLite** vía
+[`sql.js`](https://www.npmjs.com/package/sql.js) (SQLite compilado a WASM). La base se serializa
+y persiste en **IndexedDB** del navegador tras cada cambio. No hay servidor: los datos nunca
+salen de tu equipo. Capa en [src/db/](src/db/).
+
 ## Límites
 
-- La validación cubre estructura (segmentos requeridos) y optionality de campos. No valida
-  tablas de códigos ni reglas condicionales complejas; el estado `conditional` es informativo.
-- El diccionario soporta las versiones HL7 v2.1 … 2.7.1.
+- La validación cubre estructura (segmentos requeridos) y optionality de campos del diccionario
+  (requerido vs opcional). El estado `condicional` se obtiene de los perfiles que tú definas; el
+  diccionario base no codifica condicionalidad ni reglas complejas, ni valida tablas de códigos.
+- El diccionario de traducción cubre los campos más frecuentes; el resto usa sustitución por
+  términos y puede no ser perfecto.
+- El diccionario HL7 soporta las versiones v2.1 … 2.7.1.

@@ -14,28 +14,63 @@ import {
   resolveVersion,
   type FieldDef,
 } from './dictionary';
+import type { Requirement, Rule } from '../db/models';
 
 function fieldValue(seg: ParsedSegment, fieldNumber: number): string {
   return seg.fields[fieldNumber]?.raw ?? '';
 }
 
-function isRequired(def: FieldDef): boolean {
-  return def.opt === OPT_REQUIRED;
+function baseRequirement(def: FieldDef): Requirement {
+  return def.opt === OPT_REQUIRED ? 'required' : 'optional';
 }
 
-function classify(def: FieldDef, value: string): FieldStatus {
-  const present = value.trim().length > 0;
-  if (isRequired(def)) {
-    return present ? 'required-ok' : 'required-missing';
+/**
+ * Resuelve overrides de perfil. Las reglas especificas de la estructura tienen
+ * prioridad sobre las comodin ('*').
+ */
+class OverrideResolver {
+  private specific = new Map<string, Requirement>();
+  private wildcard = new Map<string, Requirement>();
+
+  constructor(rules: Rule[], structureId: string) {
+    for (const rule of rules) {
+      const key = `${rule.segment.toUpperCase()}|${rule.field}`;
+      if (rule.structure_id === structureId) {
+        this.specific.set(key, rule.requirement);
+      } else if (rule.structure_id === '*') {
+        this.wildcard.set(key, rule.requirement);
+      }
+    }
   }
-  return present ? 'optional-present' : 'optional-absent';
+
+  get(segment: string, field: number): Requirement | undefined {
+    const key = `${segment.toUpperCase()}|${field}`;
+    return this.specific.get(key) ?? this.wildcard.get(key);
+  }
+
+  get hasAny(): boolean {
+    return this.specific.size > 0 || this.wildcard.size > 0;
+  }
 }
 
-/** Construye el reporte de campos de un segmento contra su definicion. */
+function statusFor(requirement: Requirement, value: string): FieldStatus {
+  const present = value.trim().length > 0;
+  switch (requirement) {
+    case 'conditional':
+      return 'conditional';
+    case 'required':
+      return present ? 'required-ok' : 'required-missing';
+    default:
+      return present ? 'optional-present' : 'optional-absent';
+  }
+}
+
+/** Construye el reporte de campos de un segmento contra su definicion + overrides. */
 function buildSegmentReport(
   seg: ParsedSegment,
   occurrence: number,
   version: string,
+  overrides: OverrideResolver,
 ): SegmentReport {
   const def = getSegmentDef(version, seg.name);
   const label = occurrence > 1 ? `${seg.name}#${occurrence}` : seg.name;
@@ -48,7 +83,10 @@ function buildSegmentReport(
   for (let i = 1; i <= total; i++) {
     const fdef = def?.fields[i - 1]; // fields[] es 0-based; campo HL7 i -> indice i-1
     const value = fieldValue(seg, i);
+    const override = overrides.get(seg.name, i);
+
     if (fdef) {
+      const requirement = override ?? baseRequirement(fdef);
       fields.push({
         segment: label,
         index: i,
@@ -56,8 +94,21 @@ function buildSegmentReport(
         datatype: fdef.datatype,
         length: fdef.len,
         value,
-        status: classify(fdef, value),
-        required: isRequired(fdef),
+        status: statusFor(requirement, value),
+        required: requirement === 'required',
+        overridden: override !== undefined,
+      });
+    } else if (override) {
+      // Campo sin definicion en el diccionario pero cubierto por un perfil.
+      fields.push({
+        segment: label,
+        index: i,
+        name: '(definido por perfil)',
+        datatype: '',
+        value,
+        status: statusFor(override, value),
+        required: override === 'required',
+        overridden: true,
       });
     } else if (value.trim().length > 0) {
       // Campo presente sin definicion en el diccionario.
@@ -69,6 +120,7 @@ function buildSegmentReport(
         value,
         status: 'unknown',
         required: false,
+        overridden: false,
       });
     }
   }
@@ -82,8 +134,11 @@ function buildSegmentReport(
   };
 }
 
-/** Analiza la integridad de un mensaje HL7 parseado. */
-export function analyzeIntegrity(message: ParsedMessage): IntegrityReport {
+/** Analiza la integridad de un mensaje HL7 parseado, aplicando reglas de perfil. */
+export function analyzeIntegrity(
+  message: ParsedMessage,
+  rules: Rule[] = [],
+): IntegrityReport {
   const warnings: string[] = [];
   const { version, fallback } = resolveVersion(message.declaredVersion);
   if (fallback) {
@@ -92,6 +147,11 @@ export function analyzeIntegrity(message: ParsedMessage): IntegrityReport {
         ? `Version "${message.declaredVersion}" no esta en el diccionario; se valido contra ${version}.`
         : `El mensaje no declara version (MSH-12); se valido contra ${version}.`,
     );
+  }
+
+  const overrides = new OverrideResolver(rules, message.structureId);
+  if (overrides.hasAny) {
+    warnings.push('Se aplico un perfil de campos condicionales activo.');
   }
 
   const messageDef = getMessageDef(
@@ -128,7 +188,7 @@ export function analyzeIntegrity(message: ParsedMessage): IntegrityReport {
   const segments: SegmentReport[] = message.segments.map((seg) => {
     const occ = (occurrences.get(seg.name) ?? 0) + 1;
     occurrences.set(seg.name, occ);
-    return buildSegmentReport(seg, occ, version);
+    return buildSegmentReport(seg, occ, version, overrides);
   });
 
   const unknownSegments = [
@@ -142,6 +202,7 @@ export function analyzeIntegrity(message: ParsedMessage): IntegrityReport {
     requiredMissing: 0,
     optionalPresent: 0,
     optionalAbsent: 0,
+    conditional: 0,
   };
   const missingRequiredFields: FieldReport[] = [];
 
@@ -162,6 +223,9 @@ export function analyzeIntegrity(message: ParsedMessage): IntegrityReport {
           break;
         case 'optional-absent':
           counts.optionalAbsent++;
+          break;
+        case 'conditional':
+          counts.conditional++;
           break;
       }
     }

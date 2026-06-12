@@ -4,6 +4,19 @@ import type {
   IntegrityReport,
   ParsedMessage,
 } from '../hl7/types';
+import { translateFieldName } from '../i18n/fieldNames';
+
+/**
+ * Devuelve el HTML del nombre de campo. Si hay traduccion disponible y difiere
+ * del original, lo envuelve para mostrar la traduccion en un tooltip al pasar el mouse.
+ */
+function fieldNameHtml(name: string): string {
+  const translated = translateFieldName(name);
+  if (translated && translated !== name) {
+    return `<span class="field-name" title="${escapeHtml(translated)}">${escapeHtml(name)}</span>`;
+  }
+  return escapeHtml(name);
+}
 
 const STATUS_LABEL: Record<FieldStatus, string> = {
   'required-ok': 'Requerido OK',
@@ -33,10 +46,11 @@ function escapeHtml(value: string): string {
 
 function fieldRow(f: FieldReport): string {
   const value = f.value.trim().length > 0 ? escapeHtml(f.value) : '<span class="empty">(vacio)</span>';
+  const overrideMark = f.overridden ? ' <span class="override-mark" title="Definido por perfil condicional">★</span>' : '';
   return `
     <tr class="${STATUS_CLASS[f.status]}">
       <td class="num">${f.segment}-${f.index}</td>
-      <td>${escapeHtml(f.name)}</td>
+      <td>${fieldNameHtml(f.name)}${overrideMark}</td>
       <td class="val">${value}</td>
       <td class="dt">${escapeHtml(f.datatype || '-')}</td>
       <td><span class="badge ${STATUS_CLASS[f.status]}">${STATUS_LABEL[f.status]}</span></td>
@@ -67,6 +81,7 @@ function renderSummary(parsed: ParsedMessage, r: IntegrityReport): string {
         <span class="chip st-req-missing">Requeridos faltantes: ${r.counts.requiredMissing}</span>
         <span class="chip st-opt-present">Opcionales presentes: ${r.counts.optionalPresent}</span>
         <span class="chip st-opt-absent">Opcionales ausentes: ${r.counts.optionalAbsent}</span>
+        ${r.counts.conditional > 0 ? `<span class="chip st-conditional">Condicionales: ${r.counts.conditional}</span>` : ''}
       </div>
     </section>`;
 }
@@ -90,7 +105,7 @@ function renderMissing(r: IntegrityReport): string {
     : '';
 
   const fields = r.missingRequiredFields
-    .map((f) => `<li><strong>${escapeHtml(f.segment)}-${f.index}</strong> ${escapeHtml(f.name)} <span class="dt">[${escapeHtml(f.datatype)}]</span></li>`)
+    .map((f) => `<li><strong>${escapeHtml(f.segment)}-${f.index}</strong> ${fieldNameHtml(f.name)} <span class="dt">[${escapeHtml(f.datatype)}]</span></li>`)
     .join('');
   const fieldBlock = r.missingRequiredFields.length
     ? `<h4>Campos requeridos faltantes</h4><ul>${fields}</ul>`
